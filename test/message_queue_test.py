@@ -4,18 +4,16 @@ import pytest
 import time
 import requests
 
-STARTUP_TIMEOUT = 0.3
-
 TEST_TOPIC = "test_topic"
 TEST_MESSAGE = "Test Message"
 PROGRAM_FILE_PATH = "src/node.py"
-
 
 
 @pytest.fixture
 def node_with_test_topic():
     node = Swarm(PROGRAM_FILE_PATH, 1)[0]
     node.start()
+    node.wait_for_flask_startup()
     assert(node.create_topic(TEST_TOPIC).json() == {"success": True})
     yield node
     node.clean()
@@ -24,7 +22,8 @@ def node_with_test_topic():
 @pytest.fixture
 def node():
     node = Swarm(PROGRAM_FILE_PATH, 1)[0]
-    node.start(STARTUP_TIMEOUT)
+    node.start()
+    node.wait_for_flask_startup()
     yield node
     node.clean()
 

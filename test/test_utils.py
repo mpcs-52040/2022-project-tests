@@ -62,6 +62,18 @@ class Node:
         self.start()
         time.sleep(sleep)
 
+<<<<<<< HEAD
+=======
+    def wait_for_flask_startup(self):
+        number_of_tries = 20
+        for _ in range(number_of_tries):
+            try:
+                return requests.get(self.address)
+            except requests.exceptions.ConnectionError:
+                time.sleep(0.1)
+        raise Exception('Cannot connect to server')
+
+>>>>>>> step 1 tests
     def get_address(self):
         address = self.config["addresses"][self.i]
         return address["ip"]+":"+str(address["port"])
