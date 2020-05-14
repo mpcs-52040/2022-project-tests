@@ -27,7 +27,7 @@ to create new test make sure that your function name starts with `test`
 
 `test_utils.py` has some classes that will manage a node and a group of nodes called swarm. nodes and swarms can be started and stopped. nodes can receive requests with function like `get_message`, `put_message`.
 
-`1_MQ_test.py` will test your step 1 of the message queue implementation. all those tests are starting your node in an external process and its relative configuration. test will try to getting/putting messages and topics verifying the expected output.
+`message_queue_test.py` will test your step 1 of the message queue implementation. all those tests are starting your node in an external process and its relative configuration. test will try to getting/putting messages and topics verifying the expected output.
 
 ## Notes
 
@@ -36,8 +36,6 @@ for any questions ask in slack `project-questions`
 these test will be updated when there are new test releases and or bug fixes. for every update you will be notified on slack `announcements`
 
 `@pytest.fixture` are the functions called by tests before running. in this case we use them to start the nodes, then terminate them when the test is done.
-
-there is a `STARTUP_TIMEOUT` that sleeps the test to allow for the node to start and do its initialization before querying it.
 
 the test has a variable called `PROGRAM_FILE_PATH` that specifies where the `node.py` file is. you can change it for your tests but that is the place where the submission file should be. now is `"src/node.py"` because tests are meant to be run in the repository root folder.
 
