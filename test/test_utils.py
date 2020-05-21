@@ -107,6 +107,7 @@ class Swarm:
     def start(self, sleep=0):
         for node in self.nodes:
             node.start()
+            node.wait_for_flask_startup()
         time.sleep(sleep)
 
     def terminate(self):
