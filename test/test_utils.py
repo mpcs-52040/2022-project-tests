@@ -126,7 +126,7 @@ class Swarm:
         time.sleep(sleep)
 
     def make_config(self):
-        return {"addresses": [{"ip": IP, "port": get_free_port()} for i in range(self.num_nodes)]}
+        return {"addresses": [{"ip": IP, "port": get_free_port(), "internal_port": get_free_port()} for i in range(self.num_nodes)]}
 
     def get_status(self):
         statuses = {}
