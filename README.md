@@ -43,6 +43,9 @@ to create new test make sure that your function name starts with `test`
 `election_test.py` will test your step 2. these test start 1 or 5 nodes and test if the leader is elected, unique and reelected after stopping and restarting nodes.
 there is a variable called `ELECTION_TIMEOUT` that sleeps the test to allow for election to happen. It is currently set to 2 seconds. we will test with that value. you might want to lower it for faster testing. if your implementation need a longer time to pass the tests specify it in the `testing_report.md`.
 
+### step 3
+`replication_test.py` will test the ability of your implementation to replicate information between nodes. it will start a swarm, find a leader, send some updates to it then kill it, the new leader should be in the appropriate state.
+
 ## Notes
 
 for any questions ask in slack `project-questions`
