@@ -51,6 +51,10 @@ class Node:
     def resume(self):
         self.process.send_signal(signal.SIGCONT)
 
+    def commit_clean(self, sleep=0):
+        time.sleep(sleep)
+        self.clean(sleep)
+
     def clean(self, sleep=0):
         self.terminate()
         self.wait()
@@ -147,12 +151,13 @@ class Swarm:
                     return node
             except requests.exceptions.ConnectionError:
                 continue
+        time.sleep(0.5)
         return None
 
     def get_leader_loop(self, times: int):
         for _ in range(times):
             leader = self.get_leader()
-            if (leader):
+            if leader:
                 return leader
         return None
 
