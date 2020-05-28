@@ -4,7 +4,7 @@ import time
 import requests
 
 NUM_NODES_ARRAY = [5]
-PROGRAM_FILE_PATH = "src_only_election/server.py"
+PROGRAM_FILE_PATH = "src/node.py"
 TEST_TOPIC = "test_topic"
 TEST_MESSAGE = "Test Message"
 
@@ -46,7 +46,7 @@ def test_is_message_shared(swarm: Swarm, num_nodes: int):
     assert (leader1 != None)
     assert (leader1.create_topic(TEST_TOPIC).json() == {"success": True})
     assert (leader1.put_message(TEST_TOPIC, TEST_MESSAGE).json()
-           == {"success": True})
+            == {"success": True})
 
     leader1.commit_clean(ELECTION_TIMEOUT)
     leader2 = swarm.get_leader_loop(NUMBER_OF_LOOP_FOR_SEARCHING_LEADER)
