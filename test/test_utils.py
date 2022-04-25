@@ -1,37 +1,58 @@
-from subprocess import Popen, PIPE, signal
-from json import dump
-
-import time
-import requests
+import json
+import os
+import signal
 import socket
+import time
+from json import dump
+from subprocess import Popen
+from typing import Dict
+
+import zmq
 
 
-MESSAGE = "/message"
-TOPIC = "/topic"
-STATUS = "/status"
+def to_json_str(message: Dict):
+    return json.dumps(message)
+
+
+def from_json_str(message: str):
+    return json.loads(message)
+
 
 FOLLOWER = "Follower"
 LEADER = "Leader"
 CANDIDATE = "Candidate"
 
-CONFIG_PATH = "config.json"
-IP = "http://127.0.0.1"
-REQUEST_TIMEOUT = 1
+
+REQUEST_TIMEOUT = 1000  # milliseconds
 
 
 class Node:
-    def __init__(self,  program_file_path: str, config_path: str, i: int, config: dict, ):
+    def __init__(self, program_file_path: str, config_path: str, i: int, config: dict):
         self.config = config
         self.i = i
         self.address = self.get_address()
         self.program_file_path = program_file_path
-        self.config_path = config_path
+        self.config_path = os.path.abspath(config_path)
+        self.startup_sequence = [
+            "python3",
+            self.program_file_path,
+            self.config_path,
+            str(self.i),
+        ]
+        # print(self.startup_sequence)
+
+        context = zmq.Context()
+        self.req_socket = context.socket(zmq.REQ)
+        self.req_socket.RCVTIMEO = REQUEST_TIMEOUT
+        self.req_socket.connect(f"tcp://localhost:{self.get_port()}")
+
+    def send_json(self, message: Dict):
+        self.req_socket.send_json(to_json_str(message))
+
+    def recv_json(self):
+        return from_json_str(self.req_socket.recv_json())
 
     def start(self, sleep=0):
-        self.startup_sequence = ["python3",
-                                 self.program_file_path,
-                                 self.config_path,
-                                 str(self.i)]
         self.process = Popen(self.startup_sequence)
         self.pid = self.process.pid
         time.sleep(sleep)
@@ -66,35 +87,56 @@ class Node:
         self.start()
         time.sleep(sleep)
 
-    def wait_for_flask_startup(self):
-        number_of_tries = 20
-        for _ in range(number_of_tries):
+    def wait_for_startup(self):
+        for i in range(1, 10):
             try:
-                return requests.get(self.address)
-            except requests.exceptions.ConnectionError:
-                time.sleep(0.1)
-        raise Exception('Cannot connect to server')
+                # print(f"Attempt {i} to connect to server at port {self.get_port()}")
+                self.send_json({"type": "status", "method": "GET"})
+                # print(f"Waiting for response from server at port {self.get_port()}")
+                message = self.recv_json()
+                # print(f"Successfully connected to server at port {self.get_port()}")
+                assert "role" in message and "term" in message
+                return
+            except zmq.error.ZMQError as e:
+                print(
+                    f'Couldn\'t connect to server at port {self.get_port()} because of "{e}"; trying again.'
+                )
+                time.sleep(1)
+
+        raise Exception(f"Couldn't ever connect to server at port {self.get_port()}.")
+
+    def get_port(self):
+        address = self.config["addresses"][self.i]
+        return address["port"]
 
     def get_address(self):
         address = self.config["addresses"][self.i]
-        return address["ip"]+":"+str(address["port"])
+        return address["ip"] + ":" + str(address["port"])
 
     def put_message(self, topic: str, message: str):
-        data = {"topic": topic, "message": message}
-        return requests.put(self.address + MESSAGE, json=data,  timeout=REQUEST_TIMEOUT)
+        data = {"type": "message", "method": "PUT", "topic": topic, "message": message}
+        self.send_json(data)
+        return self.recv_json()
 
     def get_message(self, topic: str):
-        return requests.get(self.address + MESSAGE + '/' + topic,  timeout=REQUEST_TIMEOUT)
+        data = {"type": "message", "method": "GET", "topic": topic}
+        self.send_json(data)
+        return self.recv_json()
 
-    def create_topic(self, topic: str):
-        data = {"topic": topic}
-        return requests.put(self.address + TOPIC, json=data, timeout=REQUEST_TIMEOUT)
+    def put_topic(self, topic: str):
+        data = {"type": "topic", "method": "PUT", "topic": topic}
+        self.send_json(data)
+        return self.recv_json()
 
     def get_topics(self):
-        return requests.get(self.address + TOPIC, timeout=REQUEST_TIMEOUT)
+        data = {"type": "topic", "method": "GET"}
+        self.send_json(data)
+        return self.recv_json()
 
     def get_status(self):
-        return requests.get(self.address + STATUS, timeout=REQUEST_TIMEOUT)
+        data = {"type": "status", "method": "GET"}
+        self.send_json(data)
+        return self.recv_json()
 
 
 class Swarm:
@@ -103,15 +145,17 @@ class Swarm:
 
         # create the config
         config = self.make_config()
-        dump(config, open(CONFIG_PATH, 'w'))
+        dump(config, open("config.json", "w"))
 
-        self.nodes = [Node(program_file_path, CONFIG_PATH, i, config)
-                      for i in range(self.num_nodes)]
+        self.nodes = [
+            Node(program_file_path, "config.json", i, config)
+            for i in range(self.num_nodes)
+        ]
 
     def start(self, sleep=0):
         for node in self.nodes:
             node.start()
-            node.wait_for_flask_startup()
+            node.wait_for_startup()
         time.sleep(sleep)
 
     def terminate(self):
@@ -130,16 +174,21 @@ class Swarm:
         time.sleep(sleep)
 
     def make_config(self):
-        return {"addresses": [{"ip": IP, "port": get_free_port(), "internal_port": get_free_port()} for i in range(self.num_nodes)]}
+        return {
+            "addresses": [
+                {"ip": "localhost", "port": get_free_port()}
+                for _ in range(self.num_nodes)
+            ]
+        }
 
     def get_status(self):
         statuses = {}
         for node in self.nodes:
             try:
                 response = node.get_status()
-                if (response.ok):
-                    statuses[node.i] = response.json()
-            except requests.exceptions.ConnectionError:
+                if "role" in response:
+                    statuses[node.i] = response
+            except zmq.error.ZMQError:
                 continue
         return statuses
 
@@ -147,9 +196,9 @@ class Swarm:
         for node in self.nodes:
             try:
                 response = node.get_status()
-                if (response.ok and response.json()["role"] == LEADER):
+                if "role" in response and response["role"] == LEADER:
                     return node
-            except requests.exceptions.ConnectionError:
+            except zmq.error.ZMQError:
                 continue
         time.sleep(0.5)
         return None
@@ -167,7 +216,7 @@ class Swarm:
 
 def get_free_port():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(('', 0))
+    s.bind(("", 0))
     addr = s.getsockname()
     s.close()
     return addr[1]
