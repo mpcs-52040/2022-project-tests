@@ -10,14 +10,6 @@ from typing import Dict
 import zmq
 
 
-def to_json_str(message: Dict):
-    return json.dumps(message)
-
-
-def from_json_str(message: str):
-    return json.loads(message)
-
-
 FOLLOWER = "Follower"
 LEADER = "Leader"
 CANDIDATE = "Candidate"
@@ -39,7 +31,6 @@ class Node:
             self.config_path,
             str(self.i),
         ]
-        # print(self.startup_sequence)
 
         context = zmq.Context()
         self.req_socket = context.socket(zmq.REQ)
@@ -47,10 +38,10 @@ class Node:
         self.req_socket.connect(f"tcp://127.0.0.1:{self.get_port()}")
 
     def send_json(self, message: Dict):
-        self.req_socket.send_json(to_json_str(message))
+        self.req_socket.send_json(message)
 
     def recv_json(self):
-        return from_json_str(self.req_socket.recv_json())
+        return self.req_socket.recv_json()
 
     def start(self, sleep=0):
         self.process = Popen(self.startup_sequence)
@@ -90,11 +81,11 @@ class Node:
     def wait_for_startup(self):
         for i in range(1, 10):
             try:
-                # print(f"Attempt {i} to connect to server at port {self.get_port()}")
+                print(f"Attempt {i} to connect to server at port {self.get_port()}")
                 self.send_json({"type": "status", "method": "GET"})
-                # print(f"Waiting for response from server at port {self.get_port()}")
+                print(f"Waiting for response from server at port {self.get_port()}")
                 message = self.recv_json()
-                # print(f"Successfully connected to server at port {self.get_port()}")
+                print(f"Successfully connected to server at port {self.get_port()}")
                 assert "role" in message and "term" in message
                 return
             except zmq.error.ZMQError as e:
@@ -220,3 +211,9 @@ def get_free_port():
     addr = s.getsockname()
     s.close()
     return addr[1]
+
+
+if __name__ == "__main__":
+    s = Swarm("config.json", 1)
+    input()
+    s.start()

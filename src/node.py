@@ -2,25 +2,8 @@ import json
 import sys
 import time
 from multiprocessing import Process
-from typing import Dict
 
 import zmq
-
-
-def to_json_str(message: Dict):
-    return json.dumps(message)
-
-
-def from_json_str(message: str):
-    return json.loads(message)
-
-
-def send_json(socket, message: Dict):
-    socket.send_json(to_json_str(message))
-
-
-def recv_json(socket):
-    return from_json_str(socket.recv_json())
 
 
 def external_server(ip, port):
@@ -33,12 +16,12 @@ def external_server(ip, port):
 
     try:
         while True:
-            message = recv_json(socket)
-            # print("Received message: ", message)
+            message = socket.recv_json()
+            print("Received message: ", message)
             if message["type"] == "status":
-                send_json(socket, {"role": "anything", "term": 0})
+                socket.send_json({"role": "anything", "term": 0})
             else:
-                send_json(socket, {"i have no idea": False})
+                socket.send_json({"i have no idea": False})
             time.sleep(0.1)
     except KeyboardInterrupt:
         sys.exit()
