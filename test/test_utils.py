@@ -44,7 +44,7 @@ class Node:
         context = zmq.Context()
         self.req_socket = context.socket(zmq.REQ)
         self.req_socket.RCVTIMEO = REQUEST_TIMEOUT
-        self.req_socket.connect(f"tcp://localhost:{self.get_port()}")
+        self.req_socket.connect(f"tcp://127.0.0.1:{self.get_port()}")
 
     def send_json(self, message: Dict):
         self.req_socket.send_json(to_json_str(message))
@@ -176,7 +176,7 @@ class Swarm:
     def make_config(self):
         return {
             "addresses": [
-                {"ip": "localhost", "port": get_free_port()}
+                {"ip": "127.0.0.1", "port": get_free_port()}
                 for _ in range(self.num_nodes)
             ]
         }

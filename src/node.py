@@ -28,8 +28,8 @@ def external_server(ip, port):
 
     context = zmq.Context()
     socket = context.socket(zmq.REP)
-    socket.bind(f"tcp://*:{port}")
-    # print(f"Bound server {port}")
+    socket.bind(f"tcp://127.0.0.1:{port}")
+    print(f"Bound server {port}")
 
     try:
         while True:
