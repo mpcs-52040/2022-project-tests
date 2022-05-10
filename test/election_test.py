@@ -17,9 +17,11 @@ PROGRAM_FILE_PATH = "../src/node.py"
 @pytest.fixture
 def swarm(num_nodes):
     swarm = Swarm(PROGRAM_FILE_PATH, num_nodes)
-    swarm.start(ELECTION_TIMEOUT)
-    yield swarm
-    swarm.clean()
+    try:
+        swarm.start(ELECTION_TIMEOUT)
+        yield swarm
+    finally:
+        swarm.clean()
 
 
 def collect_leaders_in_buckets(leader_each_terms: dict, new_statuses: list):
@@ -55,9 +57,6 @@ def test_leader_in_single_node_swarm(swarm: Swarm, num_nodes: int):
 
 @pytest.mark.parametrize("num_nodes", [1])
 def test_leader_in_single_node_swarm_restart(swarm: Swarm, num_nodes: int):
-    status = swarm[0].get_status()
-    assert status["role"] == LEADER
-    swarm[0].restart(ELECTION_TIMEOUT)
     status = swarm[0].get_status()
     assert status["role"] == LEADER
 

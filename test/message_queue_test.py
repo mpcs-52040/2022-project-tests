@@ -11,20 +11,24 @@ ELECTION_TIMEOUT = 2.0
 @pytest.fixture
 def node_with_test_topic():
     node = Swarm(PROGRAM_FILE_PATH, 1)[0]
-    node.start(ELECTION_TIMEOUT)
-    node.wait_for_startup()
-    assert node.put_topic(TEST_TOPIC) == {"success": True}
-    yield node
-    node.clean()
+    try:
+        node.start(ELECTION_TIMEOUT)
+        node.wait_for_startup()
+        assert node.put_topic(TEST_TOPIC) == {"success": True}
+        yield node
+    finally:
+        node.clean()
 
 
 @pytest.fixture
 def node():
     node = Swarm(PROGRAM_FILE_PATH, 1)[0]
-    node.start(ELECTION_TIMEOUT)
-    node.wait_for_startup()
-    yield node
-    node.clean()
+    try:
+        node.start(ELECTION_TIMEOUT)
+        node.wait_for_startup()
+        yield node
+    finally:
+        node.clean()
 
 
 # TOPIC TESTS

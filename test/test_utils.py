@@ -1,21 +1,28 @@
-import json
 import os
 import signal
 import socket
 import time
 from json import dump
+from os import wait
 from subprocess import Popen
 from typing import Dict
 
 import zmq
 
-
 FOLLOWER = "Follower"
 LEADER = "Leader"
 CANDIDATE = "Candidate"
 
-
 REQUEST_TIMEOUT = 1000  # milliseconds
+
+processes = []
+
+
+def chld_handler(_signum, _frame):
+    wait()
+
+
+signal.signal(signal.SIGCHLD, chld_handler)
 
 
 class Node:

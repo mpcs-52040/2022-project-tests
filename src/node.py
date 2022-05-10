@@ -1,16 +1,14 @@
 import json
 import sys
 import time
-from multiprocessing import Process
 
 import zmq
 
 
-def external_server(ip, port):
-    """ Subscribe to list of topics and wait for messages. """
-
+def external_server(port):
     context = zmq.Context()
     socket = context.socket(zmq.REP)
+    socket.setsockopt(zmq.LINGER, 0)
     socket.bind(f"tcp://127.0.0.1:{port}")
     print(f"Bound server {port}")
 
@@ -24,16 +22,8 @@ def external_server(ip, port):
                 socket.send_json({"i have no idea": False})
             time.sleep(0.1)
     except KeyboardInterrupt:
-        sys.exit()
-
-
-def start_external_server(ip, port):
-    name = "client"
-    Process(target=external_server, name=name, args=(ip, port)).start()
-
-    # Sleep until killed
-    while True:
-        time.sleep(1)
+        socket.close()
+        context.term()
 
 
 if __name__ == "__main__":
@@ -43,4 +33,4 @@ if __name__ == "__main__":
     config_json = json.load(open(config_path))
     node_config = config_json["addresses"][node_id]
     ip, port = node_config["ip"], node_config["port"]
-    start_external_server(ip, port)
+    external_server(port)
