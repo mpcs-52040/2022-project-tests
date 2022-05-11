@@ -1,6 +1,7 @@
 import os
 import signal
 import socket
+import sys
 import time
 from json import dump
 from os import wait
@@ -51,7 +52,9 @@ class Node:
         return self.req_socket.recv_json()
 
     def start(self, sleep=0):
-        self.process = Popen(self.startup_sequence)
+        self.process = Popen(
+            self.startup_sequence, stdout=sys.stdout, stderr=sys.stderr
+        )
         self.pid = self.process.pid
         time.sleep(sleep)
 
@@ -174,7 +177,11 @@ class Swarm:
     def make_config(self):
         return {
             "addresses": [
-                {"ip": "127.0.0.1", "port": get_free_port()}
+                {
+                    "ip": "127.0.0.1",
+                    "port": get_free_port(),
+                    "internal_port": get_free_port(),
+                }
                 for _ in range(self.num_nodes)
             ]
         }
