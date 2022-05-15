@@ -40,16 +40,30 @@ class Node:
             str(self.i),
         ]
 
-        context = zmq.Context()
-        self.req_socket = context.socket(zmq.REQ)
+        self.context = zmq.Context()
+        self.req_socket = None
+        self.reset_socket()
+
+    def reset_socket(self):
+        if self.req_socket is not None:
+            self.req_socket.close()
+        self.req_socket = self.context.socket(zmq.REQ)
         self.req_socket.RCVTIMEO = REQUEST_TIMEOUT
         self.req_socket.connect(f"tcp://127.0.0.1:{self.get_port()}")
 
     def send_json(self, message: Dict):
-        self.req_socket.send_json(message)
+        try:
+            self.req_socket.send_json(message)
+        except Exception as e:
+            self.reset_socket()
+            raise zmq.error.ZMQError
 
     def recv_json(self):
-        return self.req_socket.recv_json()
+        try:
+            return self.req_socket.recv_json()
+        except Exception as e:
+            self.reset_socket()
+            raise zmq.error.ZMQError
 
     def start(self, sleep=0):
         self.process = Popen(
