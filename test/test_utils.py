@@ -84,8 +84,8 @@ class Node:
         time.sleep(sleep)
 
     def restart(self, sleep=0):
-        self.clean()
-        self.start()
+        self.clean(sleep)
+        self.start(sleep)
         time.sleep(sleep)
 
     def wait_for_startup(self):
@@ -155,7 +155,7 @@ class Swarm:
 
     def start(self, sleep=0):
         for node in self.nodes:
-            node.start()
+            node.start(sleep)
             node.wait_for_startup()
         time.sleep(sleep)
 
@@ -165,12 +165,12 @@ class Swarm:
 
     def clean(self, sleep=0):
         for node in self.nodes:
-            node.clean()
+            node.clean(sleep)
         time.sleep(sleep)
 
     def restart(self, sleep=0):
         for node in self.nodes:
-            node.clean()
+            node.clean(sleep)
             node.start()
         time.sleep(sleep)
 
