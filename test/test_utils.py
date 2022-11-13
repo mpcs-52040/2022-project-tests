@@ -15,7 +15,7 @@ LEADER = "Leader"
 CANDIDATE = "Candidate"
 
 CONFIG_PATH = "config.json"
-IP = "http://127.0.0.1"
+IP = "127.0.0.1"
 REQUEST_TIMEOUT = 1
 
 
@@ -77,7 +77,7 @@ class Node:
 
     def get_address(self):
         address = self.config["addresses"][self.i]
-        return address["ip"]+":"+str(address["port"])
+        return "http://" + address["ip"]+":"+str(address["port"])
 
     def put_message(self, topic: str, message: str):
         data = {"topic": topic, "message": message}
