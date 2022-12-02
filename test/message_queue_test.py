@@ -13,8 +13,8 @@ ELECTION_TIMEOUT = 2.0
 @pytest.fixture
 def node_with_test_topic():
     node = Swarm(PROGRAM_FILE_PATH, 1)[0]
-    node.start(ELECTION_TIMEOUT)
-    node.wait_for_flask_startup()
+    node.start()
+    time.sleep(ELECTION_TIMEOUT)
     assert(node.create_topic(TEST_TOPIC).json() == {"success": True})
     yield node
     node.clean()
@@ -23,8 +23,8 @@ def node_with_test_topic():
 @pytest.fixture
 def node():
     node = Swarm(PROGRAM_FILE_PATH, 1)[0]
-    node.start(ELECTION_TIMEOUT)
-    node.wait_for_flask_startup()
+    node.start()
+    time.sleep(ELECTION_TIMEOUT)
     yield node
     node.clean()
 

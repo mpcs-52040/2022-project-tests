@@ -27,14 +27,14 @@ class Node:
         self.program_file_path = program_file_path
         self.config_path = config_path
 
-    def start(self, sleep=0):
+    def start(self):
         self.startup_sequence = ["python3",
                                  self.program_file_path,
                                  self.config_path,
                                  str(self.i)]
         self.process = Popen(self.startup_sequence)
+        self.wait_for_flask_startup()
         self.pid = self.process.pid
-        time.sleep(sleep)
 
     def terminate(self):
         self.process.terminate()
@@ -55,16 +55,15 @@ class Node:
         time.sleep(sleep)
         self.clean(sleep)
 
-    def clean(self, sleep=0):
+    def clean(self, sleep=1e-3):
         self.terminate()
         self.wait()
         self.kill()
         time.sleep(sleep)
 
-    def restart(self, sleep=0):
+    def restart(self):
         self.clean()
         self.start()
-        time.sleep(sleep)
 
     def wait_for_flask_startup(self):
         number_of_tries = 20
@@ -111,7 +110,6 @@ class Swarm:
     def start(self, sleep=0):
         for node in self.nodes:
             node.start()
-            node.wait_for_flask_startup()
         time.sleep(sleep)
 
     def terminate(self):

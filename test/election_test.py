@@ -59,7 +59,8 @@ def test_leader_in_single_node_swarm(swarm: Swarm, num_nodes: int):
 def test_leader_in_single_node_swarm_restart(swarm: Swarm, num_nodes: int):
     status = swarm[0].get_status().json()
     assert (status["role"] == LEADER)
-    swarm[0].restart(ELECTION_TIMEOUT)
+    swarm[0].restart()
+    time.sleep(ELECTION_TIMEOUT)
     status = swarm[0].get_status().json()
     assert (status["role"] == LEADER)
 
